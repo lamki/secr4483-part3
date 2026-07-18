@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Integrated Secure Banking Environment</title>
+    <style>
+        body { font-family: 'Segoe UI', Arial, sans-serif; margin: 40px; background: #f4f6f9; }
+        .box { background: white; padding: 25px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 25px; max-width: 500px; }
+        input, button { display: block; width: 100%; margin: 10px 0; padding: 10px; border-radius: 4px; border: 1px solid #ccc; }
+        button { background: #0056b3; color: white; cursor: pointer; border: none; font-weight: bold;}
+        button:hover { background: #004085; }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
+        th { background-color: #f2f2f2; }
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+
+    <h2>SECR4483 - Enterprise Application Portal P3</h2>
+
+    <div id="auth-panel" class="box">
+        <h3>Account Portal Access</h3>
+        <input type="text" id="username" placeholder="Username" autocomplete="off">
+        <input type="password" id="password" placeholder="Password">
+        <button onclick="handleLogin()">Authenticate Identity</button>
+        <button onclick="handleRegister()" style="background:#28a745;">Register New Account</button>
+    </div>
+
+    <div id="transaction-panel" class="box hidden">
+        <h3>Welcome, <span id="user-display"></span>!</h3>
+        <button onclick="handleLogout()" style="background:#dc3545; width:auto; float:right; padding:5px 10px;">Secure Logout</button>
+        
+        <h4>Create Ledger Entry</h4>
+        <input type="number" step="0.01" id="tx-amount" placeholder="Amount (RM)">
+        <input type="text" id="tx-desc" placeholder="Transaction Purpose">
+        <button onclick="submitTransaction()">Submit Secure Transfer</button>
+
+        <h4>Your Audit Ledger</h4>
+        <table id="tx-table">
+            <thead>
+                <tr><th>ID</th><th>Amount</th><th>Description</th></tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+
+    <script>
+        async function handleLogin() {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const response = await fetch('/api/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, password })
+            });
+            const data = await response.json();
+            if(response.ok) {
+                document.getElementById('auth-panel').classList.add('hidden');
+                document.getElementById('transaction-panel').classList.remove('hidden');
+                document.getElementById('user-display').innerText = username;
+                loadTransactions();
+            } else {
+                alert(data.error);
+            }
+        }
+
+        async function handleRegister() {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const response = await fetch('/api/register', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, password })
+            });
+            const data = await response.json();
+            alert(data.message || data.error);
+        }
+
+        async function loadTransactions() {
+            const response = await fetch('/api/transactions');
+            if (response.ok) {
+                const txs = await response.json();
+                const tbody = document.querySelector('#tx-table tbody');
+                tbody.innerHTML = '';
+                txs.forEach(tx => {
+                    const row = `<tr><td>${tx.id}</td><td>RM ${tx.amount}</td><td>${tx.description}</td></tr>`;
+                    tbody.innerHTML += row; // Dynamic DOM content auto-escaped safely by backend sanitization
+                });
+            }
+        }
+
+        async function submitTransaction() {
+            const amount = document.getElementById('tx-amount').value;
+            const description = document.getElementById('tx-desc').value;
+            const response = await fetch('/api/transactions', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ amount, description })
+            });
+            const data = await response.json();
+            if (response.ok) {
+                loadTransactions();
+                document.getElementById('tx-amount').value = '';
+                document.getElementById('tx-desc').value = '';
+            } else {
+                alert(data.error);
+            }
+        }
+
+        async function handleLogout() {
+            await fetch('/api/logout', { method: 'POST' });
+            window.location.reload();
+        }
+    </script>
+</body>
+</html>
