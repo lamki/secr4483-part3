@@ -24,3 +24,5 @@ npm install express mysql2 express-session bcrypt helmet express-validator
 echo "✅ Setup Complete!"
 echo "👉 Step 1: Import schema.sql into MySQL Server."
 echo "👉 Step 2: Run 'npm start' to run the application securely."
+
+echo "End"
